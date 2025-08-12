@@ -59,7 +59,7 @@ async def start_oauth(
         )
 
 
-@router.get("/oauth/callback", response_model=SlackIntegrationResponse)
+@router.get("/oauth/callback")
 async def oauth_callback(
     code: str = Query(..., description="Authorization code from Slack"),
     state: str = Query(..., description="State parameter for CSRF validation"),
@@ -67,7 +67,7 @@ async def oauth_callback(
     slack_service: SlackService = Depends(get_slack_service)
 ):
     """
-    Handle Slack OAuth callback and complete integration.
+    Handle Slack OAuth callback and redirect user to frontend.
     
     Args:
         code: Authorization code from Slack
@@ -76,15 +76,15 @@ async def oauth_callback(
         slack_service: Injected SlackService instance
         
     Returns:
-        SlackIntegrationResponse with integration status
+        RedirectResponse to frontend with success/error status
     """
     try:
         # Check for OAuth errors from Slack
         if error:
             logger.error(f"OAuth error from Slack: {error}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"OAuth authorization failed: {error}"
+            return RedirectResponse(
+                url=f"http://localhost:3000/test-oauth.html?success=false&error={error}",
+                status_code=302
             )
         
         logger.info(f"Processing OAuth callback with state {state}")
@@ -92,21 +92,24 @@ async def oauth_callback(
         # Handle the OAuth callback
         integration_response = await slack_service.handle_oauth_callback(code, state)
         
-        if not integration_response.success:
-            raise HTTPException(
-                status_code=400,
-                detail=integration_response.message
+        if integration_response.success:
+            logger.info(f"OAuth integration successful for user {integration_response.user_id}")
+            return RedirectResponse(
+                url=f"http://localhost:3000/test-oauth.html?success=true&user_id={integration_response.user_id}&message=Integration successful",
+                status_code=302
+            )
+        else:
+            logger.error(f"OAuth integration failed: {integration_response.message}")
+            return RedirectResponse(
+                url=f"http://localhost:3000/test-oauth.html?success=false&error=integration_failed&message={integration_response.message}",
+                status_code=302
             )
         
-        return integration_response
-        
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Error processing OAuth callback: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to complete OAuth integration"
+        return RedirectResponse(
+            url=f"http://localhost:3000/test-oauth.html?success=false&error=server_error&message=Failed to complete OAuth integration",
+            status_code=302
         )
 
 
