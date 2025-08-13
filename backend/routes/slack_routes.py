@@ -83,7 +83,7 @@ async def oauth_callback(
         if error:
             logger.error(f"OAuth error from Slack: {error}")
             return RedirectResponse(
-                url=f"http://localhost:3000/test-oauth.html?success=false&error={error}",
+                url=f"http://localhost:3000/test-oauth?success=false&error={error}",
                 status_code=302
             )
         
@@ -95,20 +95,20 @@ async def oauth_callback(
         if integration_response.success:
             logger.info(f"OAuth integration successful for user {integration_response.user_id}")
             return RedirectResponse(
-                url=f"http://localhost:3000/test-oauth.html?success=true&user_id={integration_response.user_id}&message=Integration successful",
+                url=f"http://localhost:3000/test-oauth?success=true&user_id={integration_response.user_id}&message=Integration successful",
                 status_code=302
             )
         else:
             logger.error(f"OAuth integration failed: {integration_response.message}")
             return RedirectResponse(
-                url=f"http://localhost:3000/test-oauth.html?success=false&error=integration_failed&message={integration_response.message}",
+                url=f"http://localhost:3000/test-oauth?success=false&error=integration_failed&message={integration_response.message}",
                 status_code=302
             )
         
     except Exception as e:
         logger.error(f"Error processing OAuth callback: {e}")
         return RedirectResponse(
-            url=f"http://localhost:3000/test-oauth.html?success=false&error=server_error&message=Failed to complete OAuth integration",
+            url=f"http://localhost:3000/test-oauth?success=false&error=server_error&message=Failed to complete OAuth integration",
             status_code=302
         )
 

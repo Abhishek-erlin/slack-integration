@@ -37,8 +37,9 @@ class SlackService:
         
         self.repository = SlackRepository()
         
-        # In-memory state storage (in production, use Redis)
-        self._state_storage: Dict[str, str] = {}
+        # Use class-level state storage to persist across instances
+        if not hasattr(SlackService, '_shared_state_storage'):
+            SlackService._shared_state_storage: Dict[str, Dict[str, any]] = {}
     
     async def get_oauth_url(self, user_id: str) -> SlackOAuthStartResponse:
         """
@@ -54,8 +55,12 @@ class SlackService:
             # Generate secure random state for CSRF protection
             state = secrets.token_urlsafe(32)
             
-            # Store state linked to user_id (in production, use Redis with TTL)
-            self._state_storage[state] = user_id
+            # Store state linked to user_id with timestamp for TTL
+            import time
+            SlackService._shared_state_storage[state] = {
+                "user_id": user_id,
+                "timestamp": time.time()
+            }
             
             # Define OAuth scopes
             scopes = [
@@ -102,7 +107,18 @@ class SlackService:
         """
         try:
             # Validate state for CSRF protection
-            if state not in self._state_storage:
+            import time
+            current_time = time.time()
+            
+            # Clean up expired states (older than 10 minutes)
+            expired_states = [
+                s for s, data in SlackService._shared_state_storage.items() 
+                if current_time - data["timestamp"] > 600
+            ]
+            for expired_state in expired_states:
+                del SlackService._shared_state_storage[expired_state]
+            
+            if state not in SlackService._shared_state_storage:
                 logger.error(f"Invalid state parameter: {state}")
                 return SlackIntegrationResponse(
                     success=False,
@@ -110,7 +126,7 @@ class SlackService:
                     user_id=""
                 )
             
-            user_id = self._state_storage[state]
+            user_id = SlackService._shared_state_storage[state]["user_id"]
             
             # Exchange code for tokens
             token_data = await self._exchange_code_for_tokens(code)
@@ -137,7 +153,7 @@ class SlackService:
                 )
             
             # Clean up state
-            del self._state_storage[state]
+            del SlackService._shared_state_storage[state]
             
             logger.info(f"Successfully completed OAuth integration for user {user_id}")
             
