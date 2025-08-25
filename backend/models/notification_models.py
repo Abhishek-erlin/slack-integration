@@ -11,8 +11,8 @@ from uuid import UUID
 class NotificationType(str, Enum):
     """Enum for notification types."""
     AUDIT_COMPLETE = "audit_complete"
-    AUDIT_STARTED = "audit_started"
-    INTEGRATION_STATUS = "integration_status"
+    AI_VISIBILITY = "ai_visibility"
+    COMPETITOR_ANALYSIS = "competitor_analysis"
     SYSTEM_ALERT = "system_alert"
 
 
@@ -75,3 +75,21 @@ class NotificationHistoryResponse(BaseModel):
     total_count: int = Field(..., description="Total count of notifications matching filter")
     page: int = Field(..., description="Current page number")
     page_size: int = Field(..., description="Number of items per page")
+
+
+class TriggerRequest(BaseModel):
+    """Model for trigger notification request."""
+    user_id: UUID = Field(..., description="User ID to send notification to")
+    website_id: UUID = Field(..., description="Website ID related to the event")
+    channel_id: Optional[str] = Field(None, description="Slack channel ID where notification should be sent")
+    event_type: NotificationType = Field(..., description="Type of event that triggered the notification")
+    context: Optional[dict] = Field(None, description="Additional context data for message formatting")
+
+
+class TriggerResponse(BaseModel):
+    """Response model for trigger operations."""
+    success: bool = Field(..., description="Whether the trigger was successful")
+    message: str = Field(..., description="Status message")
+    notification_id: Optional[UUID] = Field(None, description="ID of the notification if created")
+    event_type: NotificationType = Field(..., description="Type of event that was triggered")
+    delivery_status: Optional[DeliveryStatus] = Field(None, description="Current delivery status")

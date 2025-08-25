@@ -34,7 +34,8 @@ class NotificationService:
         notification_type: NotificationType,
         channel_id: Optional[str] = None,
         priority: Priority = Priority.NORMAL,
-        metadata: Optional[dict] = None
+        metadata: Optional[dict] = None,
+        website_id: Optional[UUID] = None
     ) -> NotificationResponse:
         """
         Send a notification to a user via Slack.
@@ -46,6 +47,7 @@ class NotificationService:
             channel_id: Slack channel ID or user Slack ID (optional)
             priority: Priority level (default: NORMAL)
             metadata: Optional additional metadata
+            website_id: Optional website ID related to the notification
             
         Returns:
             NotificationResponse with success status and details
@@ -63,7 +65,8 @@ class NotificationService:
                     channel_id=channel_id,
                     priority=priority,
                     delivery_status=DeliveryStatus.FAILED,
-                    metadata=metadata
+                    metadata=metadata,
+                    website_id=website_id
                 )
                 
                 return NotificationResponse(
@@ -84,7 +87,8 @@ class NotificationService:
                     message_content=message_content,
                     priority=priority,
                     delivery_status=DeliveryStatus.FAILED,
-                    metadata=metadata
+                    metadata=metadata,
+                    website_id=website_id
                 )
                 
                 return NotificationResponse(
@@ -102,7 +106,8 @@ class NotificationService:
                 channel_id=target_channel,
                 priority=priority,
                 delivery_status=DeliveryStatus.SENDING,
-                metadata=metadata
+                metadata=metadata,
+                website_id=website_id
             )
             
             # Send message via Slack
@@ -153,7 +158,8 @@ class NotificationService:
                         notification_type=notification_type,
                         message_content=message_content,
                         priority=priority,
-                        delivery_status=DeliveryStatus.FAILED
+                        delivery_status=DeliveryStatus.FAILED,
+                        website_id=website_id
                     )
                 else:
                     await self.repository.update_notification_status(

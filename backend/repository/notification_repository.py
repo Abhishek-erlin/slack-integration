@@ -32,7 +32,8 @@ class NotificationRepository:
         channel_id: Optional[str] = None,
         priority: Priority = Priority.NORMAL,
         delivery_status: DeliveryStatus = DeliveryStatus.QUEUED,
-        metadata: Optional[dict] = None
+        metadata: Optional[dict] = None,
+        website_id: Optional[UUID] = None
     ) -> Optional[UUID]:
         """
         Save a new notification log entry.
@@ -45,6 +46,7 @@ class NotificationRepository:
             priority: Priority level (default: NORMAL)
             delivery_status: Initial delivery status (default: QUEUED)
             metadata: Optional additional metadata
+            website_id: Optional website ID related to the notification
             
         Returns:
             UUID of the created notification log or None if failed
@@ -62,7 +64,8 @@ class NotificationRepository:
                 "priority": priority.value,
                 "delivery_status": delivery_status.value,
                 "created_at": now,
-                "metadata": metadata
+                "metadata": metadata,
+                "website_id": str(website_id) if website_id else None
             }
             
             result = self.supabase.table("notification_logs").insert(notification_data).execute()

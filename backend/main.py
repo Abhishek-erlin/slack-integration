@@ -15,6 +15,7 @@ from contextlib import asynccontextmanager
 # Import routes
 from routes.slack_routes import router as slack_router
 from routes.notification_routes import router as notification_router
+from routes.trigger_routes import router as trigger_router
 
 # Import services for dependency injection
 from services.slack_service import SlackService
@@ -131,6 +132,7 @@ app.add_middleware(
 # Include routers
 app.include_router(slack_router, prefix="/api/v1/slack", tags=["slack"])
 app.include_router(notification_router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(trigger_router, prefix="/api/v1/triggers", tags=["triggers"])
 
 @app.get("/")
 async def root():
