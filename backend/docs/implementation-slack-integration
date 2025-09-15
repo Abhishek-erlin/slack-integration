@@ -1,0 +1,257 @@
+## Slack Integration Implementation Plan for Goosebump Crew
+1. Overview
+This plan outlines the steps to implement Slack integration within the Goosebump Crew project, enabling automated notifications for website analysis events. The integration will follow the 3-layer architecture pattern already established in the Goosebump Crew project.
+
+2. Architecture Design
+2.1 Component Architecture
+The Slack integration will be implemented following the existing 3-layer architecture of the Goosebump Crew project:
+
+Router Layer: FastAPI routes for Slack OAuth and notification endpoints
+Service Layer: Business logic for Slack integration and notifications
+Repository Layer: Database operations for Slack tokens and notification logs
+2.2 New Components
+We'll need to add the following components to the Goosebump Crew backend:
+
+Routes:
+slack_routes.py: OAuth and messaging endpoints
+notification_routes.py: Notification management endpoints
+trigger_routes.py: Event trigger endpoints
+Services:
+slack_service.py: Slack OAuth and messaging logic
+notification_service.py: Notification delivery logic
+trigger_service.py: Event trigger handling logic
+Repositories:
+slack_repository.py: Slack token storage and retrieval
+notification_repository.py: Notification logs persistence
+Models:
+slack_models.py: Slack-related data models
+notification_models.py: Notification system data models
+2.3 Database Schema Extensions
+We'll need to add two new tables to the Supabase database:
+
+slack_integrations: Stores Slack OAuth tokens and user connections
+Fields: id, user_id, slack_user_id, team_id, team_name, bot_user_id, access_token (encrypted), refresh_token (encrypted), scope, channel_id, connected_at, updated_at
+notification_logs: Tracks notification delivery status
+Fields: id, user_id, website_id, notification_type, message_content, delivery_status, channel_id, metadata, created_at, updated_at
+
+3. Implementation Phases
+Phase 1: Core Infrastructure Setup
+3.1 Environment Configuration
+Add required environment variables to Goosebump Crew's .env file:
+SLACK_CLIENT_ID: From Slack app settings
+SLACK_CLIENT_SECRET: From Slack app settings
+SLACK_REDIRECT_URI: OAuth callback URL
+ENCRYPTION_KEY: 32-byte key for token encryption
+Update config/config.py to include Slack configuration settings
+
+3.2 Dependencies Installation
+Add the required dependencies to pyproject.toml:
+
+slack-sdk: Official Slack SDK for Python
+slack-bolt: Framework for building Slack apps
+cryptography: For token encryption/decryption
+3.3 Database Migration
+Create a migration script to add the new tables to the Supabase database:
+
+slack_integrations table
+notification_logs table with proper constraints
+Phase 2: Data Models Implementation
+2.1 Create Slack Models
+Define Pydantic models in models/slack_models.py:
+
+OAuthStartRequest: User ID for OAuth initiation
+OAuthStartResponse: Auth URL and state
+OAuthCallbackResponse: Success status and redirect URL
+SlackIntegrationStatus: Connection status and details
+MessageRequest: User ID, message, and optional channel
+MessageResponse: Success status and message timestamp
+2.2 Create Notification Models
+Define Pydantic models in models/notification_models.py:
+
+NotificationType: Enum for notification types (audit_complete, ai_visibility, competitor_analysis, system_alert)
+Priority: Enum for notification priority (low, normal, high)
+DeliveryStatus: Enum for delivery status (pending, delivered, failed)
+NotificationRequest: User ID, website ID, notification type, context
+NotificationResponse: Success status, message, notification ID
+TriggerResponse: Success status, message, notification ID, delivery status
+Phase 3: Repository Layer Implementation
+3.1 Create Slack Repository
+Implement repository/slack_repository.py with methods:
+
+save_integration(): Store Slack tokens with encryption
+get_integration(): Retrieve and decrypt Slack tokens
+delete_integration(): Remove Slack integration
+update_channel(): Update default channel for notifications
+3.2 Create Notification Repository
+Implement repository/notification_repository.py with methods:
+
+save_notification_log(): Record notification attempt
+update_notification_status(): Update delivery status
+get_notification_logs(): Retrieve notification history
+get_notification_stats(): Get delivery statistics
+Phase 4: Service Layer Implementation
+4.1 Create Slack Service
+Implement services/slack_service.py with methods:
+
+generate_oauth_url(): Create OAuth URL with state
+handle_oauth_callback(): Process OAuth callback and store tokens
+send_message(): Send message to Slack channel
+get_integration_status(): Check if user is connected
+disconnect(): Remove Slack integration
+Key implementation details:
+
+Use class-level shared storage for OAuth states
+Implement proper state validation with TTL
+Encrypt tokens before database storage
+Handle token refresh if needed
+4.2 Create Notification Service
+Implement services/notification_service.py with methods:
+
+send_notification(): Send notification to user via Slack
+_format_message(): Format message template with context
+get_notification_logs(): Retrieve notification history
+Key implementation details:
+
+Define message templates for different notification types
+Implement fallback messages for template formatting errors
+Track delivery status in database
+Handle errors gracefully
+4.3 Create Trigger Service
+Implement services/trigger_service.py with methods:
+
+handle_event_trigger(): Process event and send notification
+get_supported_events(): List available event types
+test_trigger(): Test notification delivery
+Key implementation details:
+
+Map event types to message templates
+Extract context from events
+Track metadata for analytics
+Phase 5: API Routes Implementation
+5.1 Create Slack Routes
+Implement routes/slack_routes.py with endpoints:
+
+POST /api/v1/slack/oauth/start: Start OAuth flow
+GET /api/v1/slack/oauth/callback: Handle OAuth callback
+POST /api/v1/slack/send-message: Send direct message
+GET /api/v1/slack/status/{user_id}: Check integration status
+DELETE /api/v1/slack/disconnect/{user_id}: Remove integration
+
+5.2 Create Notification Routes
+Implement routes/notification_routes.py with endpoints:
+
+POST /api/v1/triggers/send: Send notification trigger
+GET /api/v1/triggers/supported-events: List event types
+POST /api/v1/triggers/test: Test notification delivery
+GET /api/v1/triggers/health: Health check endpoint
+Phase 6: Integration with Existing System
+6.1 Dependency Injection Setup
+Update dependencies.py to include the new services:
+
+get_slack_repository(): Create SlackRepository instance
+get_slack_service(): Create SlackService instance
+get_notification_service(): Create NotificationService instance
+get_trigger_service(): Create TriggerService instance
+6.2 Main App Integration
+Update main.py to include the new routers:
+
+Add Slack routes
+Add notification routes
+Add trigger routes
+
+6.3 Event Trigger Integration
+Integrate with existing website analysis flow:
+
+Identify key events in the analysis process:
+Analysis completion
+AI visibility analysis
+Competitor analysis
+System alerts
+Add trigger calls at appropriate points in the analysis service:
+After successful analysis completion
+When AI visibility analysis is ready
+When competitor analysis is complete
+For system-wide alerts
+
+4. Security Considerations
+4.1 Token Security
+Encryption: Implement Fernet encryption for all Slack tokens
+Key Management: Store encryption key securely in environment variables
+Token Refresh: Implement token refresh logic if needed
+4.2 OAuth Security
+CSRF Protection: Use secure random state parameter
+State TTL: Implement 10-minute expiration for state tokens
+HTTPS: Enforce HTTPS for all OAuth redirects
+4.3 API Security
+Rate Limiting: Implement rate limiting for all endpoints
+Input Validation: Validate all input with Pydantic models
+Error Handling: Implement proper error handling without exposing sensitive data
+
+5. Testing Strategy
+5.1 Unit Testing
+Repository Tests: Test database operations with mocked database
+Service Tests: Test business logic with mocked repositories
+Route Tests: Test API endpoints with mocked services
+5.2 Integration Testing
+OAuth Flow: Test end-to-end OAuth flow with mock Slack API
+Notification Delivery: Test notification delivery with mock Slack API
+Event Triggers: Test event trigger handling
+5.3 End-to-End Testing
+Real Slack Integration: Test with actual Slack workspace
+Full Analysis Flow: Test notifications during complete analysis process
+Error Recovery: Test system behavior during API failures
+
+6. Deployment and Operations
+6.1 Database Migration
+Create migration scripts for new tables
+Test migrations in development environment
+Apply migrations to production database
+6.2 Environment Configuration
+Set up Slack app in Slack API dashboard
+Configure OAuth redirect URLs
+Set up environment variables in production
+6.3 Monitoring and Logging
+Implement structured logging for all Slack operations
+Track key metrics:
+OAuth success/failure rates
+Message delivery success rates
+API response times
+Error rates by endpoint
+6.4 Documentation
+Update API documentation with new endpoints
+Create user guide for Slack integration setup
+Document message templates and event types
+
+7. Implementation Timeline
+Week 1: Infrastructure and Core Components
+Set up environment and dependencies
+Create database schema and migrations
+Implement data models
+Implement repositories
+Week 2: Service Layer and API Routes
+Implement Slack service
+Implement notification service
+Implement trigger service
+Create API routes
+Week 3: Integration and Testing
+Integrate with existing analysis flow
+Implement unit and integration tests
+Conduct end-to-end testing
+Fix bugs and optimize performance
+Week 4: Documentation and Deployment
+Create documentation
+Prepare production environment
+Deploy to staging
+Deploy to production
+
+8. Future Enhancements
+Interactive Messages: Add support for interactive Slack messages
+Slash Commands: Implement Slack slash commands for analysis
+Webhook Support: Add support for Slack webhooks
+Multi-Channel Support: Allow notifications to different channels based on type
+User Preferences: Allow users to customize notification preferences
+
+9. Conclusion
+This implementation plan provides a comprehensive roadmap for integrating Slack notifications into the Goosebump Crew project. By following the existing 3-layer architecture and implementing proper security measures, we can create a robust and maintainable Slack integration that enhances the user experience by providing timely notifications about website analysis events.
+
+The plan ensures clean separation of concerns, proper error handling, and security best practices while maintaining compatibility with the existing codebase. Once implemented, users will be able to receive real-time notifications about their website analyses directly in their Slack workspace.
