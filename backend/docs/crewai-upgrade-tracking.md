@@ -429,3 +429,205 @@ class AgentFailureMonitor:
 4. **Graceful Degradation**: High-quality fallback content when agents fail
 5. **Self-Healing**: Automatic recovery from configuration and temporary issues
 6. **Enhanced Monitoring**: Real-time failure tracking and alerting
+
+## 6. Migration Steps for Goosebump-Crew Repository
+
+### **Step 1: Dependency Updates**
+```bash
+# Update pyproject.toml
+# BEFORE:
+crewai = "0.105.0"
+crewai-tools = "0.42.0"
+
+# AFTER:
+crewai = "0.201.1"
+crewai-tools = "0.75.0"
+
+# Run dependency update
+poetry update crewai crewai-tools
+```
+
+### **Step 2: Pydantic v2 Migration (Critical Files)**
+The goosebump-crew repository has **extensive Pydantic v1 usage** that needs migration:
+
+#### **Files Requiring Pydantic v2 Updates:**
+1. **`models/gap_analysis.py`** (12 `@validator` instances)
+2. **`models/quick_wins.py`** (11 `@validator` instances) 
+3. **`api/routes/competitors.py`** (10 `@validator` instances)
+4. **`models/ahrefs_usage.py`** (8 `@validator` instances)
+5. **`models/email.py`** (1 `@validator` instance)
+
+#### **Migration Pattern for Each File:**
+```python
+# BEFORE (Pydantic v1):
+from pydantic import BaseModel, Field, validator
+
+class GapAnalysisRequest(BaseModel):
+    @validator('domain')
+    def validate_domain(cls, v):
+        # validation logic
+        return v
+    
+    class Config:
+        from_attributes = True
+
+# AFTER (Pydantic v2):
+from pydantic import BaseModel, Field, field_validator, ConfigDict
+
+class GapAnalysisRequest(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    @field_validator('domain')
+    @classmethod
+    def validate_domain(cls, v):
+        # validation logic
+        return v
+```
+
+### **Step 3: CrewAI Integration Updates**
+#### **Files Requiring CrewAI Updates:**
+- **`crews/crew.py`** - Main crew base class
+- **`crews/article_crew.py`** - Article generation crew
+- **`crews/article_generator_crew.py`** - Article generator crew
+- **`crews/brand_tone_crew.py`** - Brand tone analysis crew
+- **All other crew files** (14 total crew files)
+
+#### **Key Changes Needed:**
+```python
+# Update imports for CrewAI 0.201.1 compatibility
+from crewai import Agent, Crew, Process, Task, LLM
+from crewai.project import CrewBase, agent, crew, task, before_kickoff
+
+# Enhanced error handling for new version
+try:
+    result = crew.kickoff()
+    # Add content validation
+    if self._validate_content_quality(result):
+        return result
+except CrewAIException as e:
+    # Handle CrewAI specific exceptions
+    return self._handle_crewai_failure(e)
+```
+
+### **Step 4: Environment Loading Verification**
+The goosebump-crew **already has proper environment loading** in `main.py`:
+```python
+# ✅ Already correct - no changes needed
+from dotenv import load_dotenv
+load_dotenv()  # Called at the very beginning
+```
+
+### **Step 5: Database Service Updates**
+Check if **`utils/database.py`** needs environment variable name updates:
+```python
+# Verify variable names match .env file
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")  # or SUPABASE_ANON_KEY
+```
+
+### **Step 6: Enhanced Error Handling Implementation**
+Add the new error handling patterns to existing crew classes:
+
+#### **Add to Base Crew Classes:**
+```python
+# Add to utils/crew_base.py or individual crew files
+async def _execute_with_retry(self, crew_func, max_retries=3):
+    """Enhanced retry logic for CrewAI 0.201.1"""
+    for attempt in range(max_retries):
+        try:
+            result = await crew_func()
+            if self._validate_content_quality(result):
+                return ServiceResponse(success=True, data=result)
+        except CrewAITimeoutError:
+            wait_time = (2 ** attempt) * 1
+            await asyncio.sleep(wait_time)
+        except CrewAIRateLimitError:
+            wait_time = (2 ** attempt) * 5
+            await asyncio.sleep(wait_time)
+    
+    return await self._generate_fallback_content()
+```
+
+### **Step 7: Testing and Validation**
+#### **Create Migration Test Script:**
+```python
+# test_crewai_migration.py
+import asyncio
+from crews.crew import WebsiteAnalysisCrew
+
+async def test_migration():
+    """Test CrewAI 0.201.1 migration"""
+    crew = WebsiteAnalysisCrew()
+    
+    # Test basic functionality
+    try:
+        result = crew.crew().kickoff(inputs={"url": "https://example.com"})
+        print("✅ CrewAI 0.201.1 migration successful")
+        return True
+    except Exception as e:
+        print(f"❌ Migration failed: {e}")
+        return False
+
+if __name__ == "__main__":
+    asyncio.run(test_migration())
+```
+
+### **Step 8: Configuration Updates**
+#### **Update YAML Configurations:**
+Review and update crew configuration files:
+- **`crews/config/agents.yaml`**
+- **`crews/config/tasks.yaml`**
+
+Add enhanced system messages for better content quality:
+```yaml
+# Enhanced agent configuration for 0.201.1
+system_message: |
+  CRITICAL: Provide complete, detailed analysis without meta-descriptions.
+  Never summarize your work - deliver the actual content requested.
+```
+
+### **Step 9: Deployment Considerations**
+#### **Docker Updates (if using containerization):**
+```dockerfile
+# Update Dockerfile if needed for new dependencies
+RUN poetry install --no-dev
+```
+
+#### **Environment Variables:**
+Ensure all required environment variables are set:
+```bash
+OPENAI_API_KEY=your_key_here
+SERPER_API_KEY=your_key_here
+SUPABASE_URL=your_url_here
+SUPABASE_KEY=your_key_here  # or SUPABASE_ANON_KEY
+```
+
+### **Migration Checklist for Goosebump-Crew:**
+
+- [ ] **Update pyproject.toml** (CrewAI 0.105.0 → 0.201.1)
+- [ ] **Migrate Pydantic v1 → v2** (5 critical files with validators)
+- [ ] **Update all crew classes** (14 crew files)
+- [ ] **Add enhanced error handling** (retry logic, fallbacks)
+- [ ] **Update YAML configurations** (agents.yaml, tasks.yaml)
+- [ ] **Test all crew functionality** (website analysis, brand tone, etc.)
+- [ ] **Verify database connections** (Supabase integration)
+- [ ] **Update deployment configs** (Docker, cloud configs)
+- [ ] **Run comprehensive tests** (all API endpoints)
+- [ ] **Monitor performance** (compare before/after metrics)
+
+### **Estimated Migration Time:**
+- **Pydantic Migration**: 2-3 hours (5 files with extensive validators)
+- **CrewAI Updates**: 3-4 hours (14 crew files)
+- **Testing & Validation**: 2-3 hours
+- **Total**: **7-10 hours** for complete migration
+
+### **Key Differences from Slack-Integration Migration:**
+| Aspect | Slack-Integration | Goosebump-Crew | Complexity |
+|--------|------------------|----------------|------------|
+| **Pydantic v1 Usage** | Minimal (crews/models.py only) | Extensive (5+ files, 42+ validators) | ✅ Much Higher |
+| **CrewAI Files** | 2 crew files | 14 crew files | ✅ 7x More Complex |
+| **Environment Loading** | Required fixes | Already correct | ✅ No Changes Needed |
+| **Migration Time** | ~2.5 hours | ~7-10 hours | ✅ 3-4x Longer |
+| **Risk Level** | Low | Medium-High | ✅ More Testing Required |
+
+The goosebump-crew repository has **significantly more complex migration requirements** due to extensive Pydantic v1 usage across multiple model files and numerous crew implementations.
