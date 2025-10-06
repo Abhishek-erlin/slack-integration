@@ -1,0 +1,224 @@
+tasks:
+   research_brief_task:
+      description: >
+         Generate a comprehensive, brand-aligned research brief for {keyword} targeting {location}.
+         Write brief's content outline section to align to title {selected_title}. and outrank top 5 articles by covering all the common patterns, strengths and gaps. 
+
+         This task includes:
+         1. Analyze top 5 competing articles using SerperDevTool and ScrapeWebsiteTool
+         2. Extract content structure, keyword strategies, statistics, and SEO patterns
+         3. Structure the research brief with the following sections:
+            - ## COMPETITIVE ANALYSIS
+            - ## CONTENT OUTLINE
+            - ## RESEARCH INSIGHTS
+            - ## SEO STRATEGY
+         4. Apply the brand's voice, tone, and key messages only to the ## CONTENT OUTLINE section:
+            - Use {brand_tone_keywords} and {brand_tone_examples}
+            - Apply {brand_voice_patterns} and {brand_voice_examples}
+            - Weave tone and voice into the H2/H3 options, section descriptions, and content transitions
+
+         The ## RESEARCH INSIGHTS section must:
+         - Include research-backed data, statistics, expert perspectives, and industry trends
+         - Clearly identify the **origin** of each claim or data point
+         - Include **at least 5 trusted, verifiable source links** (e.g., journal articles, government sites, or leading industry publications)
+         - Verify that all links are **active and accessible** (no "Page Not Found", "Content Removed", or outdated links)
+         - Prefer **recent and top-ranking** articles or references only (within the last 18 months when possible)
+
+         Rules:
+         - Do not alter technical data (facts, stats, keywords, URLs)
+         - Keep all brief structure and headings
+         - Use tone examples as stylistic inspiration
+         - Make sure the output feels like it was written natively in the brand's voice
+
+         The brief must align with the selected title and provide a content outline that:
+         - Covers all major content themes and questions found in the top 5 competing articles
+         - Goes beyond them with depth, clarity, or added insights to maximize ranking potential
+         - Creates a structure that will support 800-950 words of detailed article content
+         - Includes 4-6 main H2 sections with 2-3 H3 subsections each
+         - Provides detailed descriptions for each section that enable expansion to 150-200 words (H2) and 80-120 words (H3)
+         - Suggests specific examples, tips, recommendations, or actionable advice for each section
+
+      expected_output: >
+         CRITICAL FINAL ANSWER REQUIREMENTS:
+         
+         🚫 DO NOT SUMMARIZE OR PROVIDE META-DESCRIPTIONS OF YOUR WORK
+         🚫 DO NOT say "The comprehensive research brief contains..." or similar summaries
+         🚫 DO NOT abbreviate or shorten your response in any way
+         
+         ✅ RETURN THE ACTUAL, COMPLETE RESEARCH BRIEF CONTENT
+         ✅ Your final answer must be the full research brief with all sections detailed
+         ✅ Minimum 1000 characters of actual content (not summaries) to support ~1000 word articles
+         ✅ Include ALL sections with complete information, not descriptions of sections
+         
+         IMPORTANT: Return the COMPLETE research brief with ALL sections fully filled out.
+         Your final answer should be the actual research brief content, not a summary of what you created.
+
+         A fully branded SEO research brief in this format:
+
+         ## COMPETITIVE ANALYSIS 
+         [Top 5 article URLs, average word count, patterns, gaps, strengths]
+
+         ## CONTENT OUTLINE
+         Title: {selected_title}
+         [H2/H3 structure with detailed section descriptions for content expansion. Each H2 should include 2-3 sentences describing what content should be covered, key points to address, and specific examples or tips to include. Each H3 should have 1-2 sentences explaining the specific subtopic and actionable information to provide. Include enough detail so a content writer can expand each section to 150-200 words (H2) and 80-120 words (H3).]
+
+         ## RESEARCH INSIGHTS
+         [Include research-backed data, statistics, expert insights, and clear citations.
+         Include **at least 5 trusted source links** to support the insights.
+         Confirm that each link is **working**, **up-to-date**, and **leads to recent and reliable content**.]
+
+         ## SEO STRATEGY
+         [Keyword strategy, structure tips, internal linking]
+
+      agent: research_brief_agent
+      async: false
+
+   brand_tone_adaptation_task:
+      description: >
+         Transform the provided research brief to align with {url}'s tone and voice guidelines while preserving all content structure and SEO value.
+         Use the "{selected_title}" as the title for the article. The title is already enhanced with brand tone.
+
+         Brand Tone and Voice Guidelines:
+         - Tone Keywords: {brand_tone_keywords}
+         - Tone Examples: {brand_tone_examples}
+         - Voice Patterns: {brand_voice_patterns}
+         - Voice Examples: {brand_voice_examples}
+         - Key Messages: {brand_key_messages}
+
+         Brand Personality:
+         - Core Messaging Themes: {messaging_themes_keywords}
+         - Messaging Theme Examples: {messaging_themes_examples}
+         - Key Personality Traits: {personality_traits_keywords}
+         - Personality Trait Examples: {personality_traits_examples}
+         
+
+         Research Brief to Transform:
+         Transform the research brief from the previous task. You will have access to the output of the research brief task.
+
+         Transformation Requirements:
+         1. Maintain all sections, headings, and structural elements from the original brief
+         2. Preserve all statistics, facts, URLs, and technical SEO information
+         3. Transform language style to match the brand's tone keywords ({brand_tone_keywords}), using tone examples as inspiration
+         4. Apply the brand's voice patterns ({brand_voice_patterns}), following the provided voice examples
+         5. Incorporate key messages ({brand_key_messages}) where appropriate
+         6. Weave in the core messaging themes ({messaging_themes_keywords}) where relevant, using messaging theme examples as inspiration
+         7. Embody the brand's personality traits ({personality_traits_keywords}) throughout the content, guided by the personality trait examples
+         8. IMPORTANT: You MUST adapt the ENTIRE research brief above, not just parts of it
+         9. Focus brand tone application on:
+            - H2 options
+            - H3 options
+            - Section descriptions
+            - Transitions between sections
+            - Explanatory content
+            - Recommendations and strategic advice
+         10. Maintain a professional tone for technical SEO elements while still incorporating brand personality
+         11. Use appropriate customer-focused language that aligns with how the brand typically addresses its audience
+         12. Ensure consistent voice adaptation throughout ALL sections of the brief
+         13. Incorporate industry-appropriate terminology that resonates with the brand's specific market segment
+         14. Maintain the brand's unique value proposition throughout the adaptation where relevant
+
+      expected_output: >
+         A transformed research brief that maintains the exact same structure and information as the original,
+         but with language that clearly reflects {url}'s unique tone, voice, and personality.
+
+         The output should:
+         - Maintain all original sections:
+            ## COMPETITIVE ANALYSIS 
+            ## CONTENT OUTLINE
+            ## RESEARCH INSIGHTS
+            ## SEO STRATEGY
+         - Preserve all information but adapt language to match {url}'s brand guidelines
+         - Incorporate the brand's tone keywords: {brand_tone_keywords}
+         - Apply the brand's voice patterns: {brand_voice_patterns}
+         - Weave in key messages: {brand_key_messages}
+         - Incorporate the brand's core messaging themes: {messaging_themes_keywords}
+         - Reflect the brand's personality traits: {personality_traits_keywords}
+         - Ensure consistency in tone, voice, and personality throughout
+         - Show clear influence from the provided examples for each brand element
+
+      agent: brand_tone_adaptation_agent
+      context: [research_brief_task]
+      async: false
+
+   content_generation_task:
+      description: >
+         Write a human-sounding, emotionally resonant, and SEO-optimized article using the structured research brief provided. 
+         
+         CRITICAL: You must EXPAND the research brief outline into a full 800-950 word article. The brief contains H2/H3 headings and brief descriptions - your job is to turn these into comprehensive, detailed content:
+         - Transform each H2 section heading into 150-200 words of detailed, actionable content
+         - Expand each H3 subsection into 80-120 words of comprehensive explanation  
+         - Add specific examples, practical tips, step-by-step guidance, and detailed explanations for every point mentioned in the content outline
+         - Include product recommendations, styling advice, measurements, or specific how-to instructions where applicable
+         - Elaborate on any statistics or data points mentioned in the research insights section
+         
+         Always follow the structure defined in {content_outline}, and align the article with the tone and voice shown in {brand_tone_keywords}, {brand_tone_examples}, {brand_voice_patterns}, and {brand_voice_examples}. 
+         Reflect {brand_key_messages} consistently across the piece. Follow brand word choices defined in {content_generation_guidelines_word_choice}, and use appropriate terms from {lexicon_replacements}.
+         Embed actions and closings from {call_to_action_examples}. Respect tonal boundaries and consistency with reference to {tonal_dos} and {tonal_donts} aslo refer to the content writing rules added by the user in the {brand_memory} to generate a more engaging article.
+
+         Integrate E-E-A-T principles throughout:
+         - **Experience**: Demonstrate lived or firsthand use of products, services, or methods wherever applicable. Use phrases like "In our test…" or "When we implemented…" to ground the content in real scenarios.
+         - **Expertise**: Attribute insights to qualified professionals, include author bios where possible, and use correct domain-specific terminology.
+         - **Authoritativeness**: Cite reputable sources or reference well-known publications. Emphasize any external mentions or recognitions of the brand.
+         - **Trustworthiness**: Ensure factual accuracy, add relevant citations for claims, and maintain clarity and consistency across all content. Avoid misleading phrasing or exaggerated claims.
+
+         The article must:
+         - Open with a clear, informative introduction directly addressing the target SEO keyword and intent.
+         - Avoid story-style or anecdotal openings. Do NOT start with lines like: "Every parent knows," "In today's world," or "Gone are the days..."
+         - Ensure the opening paragraph includes the primary SEO keyword naturally and delivers an immediate value proposition or summary of what the article covers.
+         - Target a total word count for ARTICLE BODY of 800-950 words (excluding title, meta description, and any header information). This should result in approximately 900 total words when including natural content flow.
+         - IMPORTANT: Expand each H2 section from the research brief into 150-200 words of detailed content.
+         - For each H3 subsection mentioned in the brief, write 80-120 words of comprehensive explanation.
+         - Include practical examples, actionable tips, and detailed explanations for every point mentioned in the content outline.
+         - Add specific product recommendations, styling advice, or how-to guidance where applicable.
+         - Naturally include SEO keywords, research insights, and brand messages throughout the expanded content.
+         - Sound unmistakably human — avoiding formulaic or AI-detected phrasing.
+         - Add transitional sentences between sections to create natural content flow and reach target word count.
+
+      expected_output: >
+         A complete, publication-ready article that includes:
+
+         ## TITLE
+         [Selected SEO-optimized title]
+
+         ## META DESCRIPTION
+         [Compelling 150-160 character summary with primary keyword]
+
+         ## ARTICLE BODY
+         [Full article with proper H2/H3 structure, integrated testimonials, and brand-aligned voice]
+         [Word count: 800-950 words for article body content]
+         [IMPORTANT: Each H2 section should contain 150-200 words of detailed, expanded content from the research brief outline]
+         [Include practical examples, actionable advice, and comprehensive explanations for each point]
+
+      agent: content_generator_agent
+      async: false
+
+   generate_brand_titles_task:
+      description: >
+         Generate five creative, high-CTR, and brand-aligned blog titles using the provided keyword and top 5 scraped titles from search.
+
+         Strategy:
+         - Analyze the structural patterns in {scraped_titles} (e.g., use of numbers, formats like "how-to" or questions).
+         - Incorporate the brand's {brand_tone_keywords}, {brand_voice_patterns}, {brand_key_messages}.
+         - Reference {brand_tone_examples} and {brand_voice_examples} for stylistic alignment.
+         - Seamlessly integrate {keyword} into the titles.
+         - Focus on originality, structure that indicates article type, emotional appeal, and SEO clarity.
+
+      expected_output: >
+         Return a JSON with five original, on-brand, SEO-friendly titles:
+         {
+          "enhanced_titles": [
+            {"title": "..."},
+            {"title": "..."},
+            {"title": "..."},
+            {"title": "..."},
+            {"title": "..."}
+          ]
+         }
+         Each title must:
+         - Be original (not a rewording)
+         - Match the tone, voice, and key messages
+         - Include the {keyword} naturally
+         - Be under 80 characters
+         - Be optimized for search and social click-throughs
+
+      agent: title_generator
